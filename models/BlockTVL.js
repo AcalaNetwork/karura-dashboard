@@ -9,6 +9,10 @@ module.exports = class BlockTvl {
         this.kar = liquidity.kar;
         this.ksm = liquidity.ksm;
     }
-    
 
+
+}
+
+{
+    
 }
