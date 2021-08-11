@@ -1,0 +1,36 @@
+{
+  "name": "karura-dadhboard",
+  "version": "1.0.0",
+  "description": "A public facing dashboard showing statistics on the Karua platform and Kusama blockchain",
+  "main": "index.mjs",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon index.js",
+    "start-ts": "tsc && node index.ts"
+  },
+  "dependencies": {
+    "@acala-network/api": "2.0.2-3",
+    "@acala-network/sdk-core": "^2.0.1",
+    "@acala-network/type-definitions": "^2.0.1",
+    "@open-web3/api": "^0.9.4-23",
+    "@open-web3/scanner": "^0.9.4-23",
+    "@polkadot/api": "^5.4.1",
+    "@polkadot/rpc-provider": "^5.4.1",
+    "chalk": "^4.1.2"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.12",
+    "tslint": "^5.12.1",
+    "typescript": "^3.3.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AcalaNetwork/karura-dadhboard.git"
+  },
+  "author": "TylerGriffin99",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/AcalaNetwork/karura-dadhboard/issues"
+  },
+  "homepage": "https://github.com/AcalaNetwork/karura-dadhboard#readme"
+}
