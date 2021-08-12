@@ -1,4 +1,6 @@
 {
-    "WS_PROVIDER" : "wss://karura.api.onfinality.io/public-ws",
+    "KARURA_PROVIDER" : "wss://karura.api.onfinality.io/public-ws",
+    "KUSAMA_PROVIDER" : "wss://kusama.elara.patract.io",
+    "KUSAMA_CROWDLOAN_ID" : 2000,
     "TOKEN_PAIRS" : [ ["KAR", "KSM"], ["KUSD", "KSM"] ]
 }

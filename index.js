@@ -1,5 +1,5 @@
 // const Scanner = require('@open-web3/scanner');
-const { calculateBlockDexTvl, calculateTotalDexTvl } = require('./services/calculateDexLiquidity');
+const { calculateBlockTvl } = require('./services/calculateBlockTvl');
 const { ApiPromise } = require('@polkadot/api');
 const { WsProvider } = require('@polkadot/rpc-provider');
 const { options } = require("@acala-network/api");
@@ -7,22 +7,36 @@ const config = require("./config.json");
 const chalk = require('chalk');
 const log = console.log;
 
-const provider = new WsProvider(config.WS_PROVIDER);
-const api = new ApiPromise(
-    options({
-      provider,
-    })
-);
-
 (async function main() {
     log(chalk.blue.bold('Start Main Function'))
-
-    await calculateTotalDexTvl();
     
-    // TODO: initiate scnning logic
+    // Get last block scan information 
+    // TODO: convert to DB.get
+    let sampleResponseFromDB = {
+        dex: {
+            pair: {
+                "KUSD/KSM": 10,
+                "KAR/KSM": 11,
+                timestamp: 3232
+            }
+        },
+        loans: {
+            ksmLocked: {
+                collateral: 100,
+                debit: 101,
+                timestamp: 100000
+            }
+        },
+        crowdloans: {
+            fundsRaised: 222
+        },
+        header: 31222
+    }
+    
+    // TODO: initiate scanning logic
     // while(true) {
-        const header = await api.derive.chain.bestNumberFinalized();
-        await calculateBlockDexTvl(header);
+        // dbData.lastHeader = header - 1; // testing
+        await calculateBlockTvl(sampleResponseFromDB);
         // await sleep(6000);
     // }
 
