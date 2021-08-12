@@ -101,27 +101,35 @@ async function extractBlockDexLiquidities(block, timestamp, blockNumber) {
                 })
             });
         });
-    })
-
-    await extractBlockDexLiquidity(block, tradingPairs, timestamp, blockNumber);
+    });
+    await extractBlockValue(tradingPairs, timestamp, blockNumber);
 }
 
-async function extractBlockDexLiquidity(block, tradingPairs, timestamp, blockNumber) {
-    const balances = await Promise.all(tradingPairs)
-    // const balances = await api.query.dex.liquidityPool.at(block.header.hash, tradingPairs);
-    console.log("BALANCES", balances)
-    const liquidity = balances.map((balance) => {
+async function extractBlockValue(tradingPairs, timestamp, blockNumber) {
+    const dexBalances = await Promise.all(tradingPairs);
+    const liquidity = dexBalances.map((balance) => {
         return {
-            method: "dex.Liquidity",
+            data: {
+                method: "dex.Liquidity",
+                [balance.pair[0]]: balance.data[0].toString(),
+                [balance.pair[1]]: balance.data[1].toString(),
+                timestamp: timestamp
+            },
             pair: balance.pair,
-            [balance.pair[0]]: balance.data[0].toString(),
-            [balance.pair[1]]: balance.data[1].toString(),
-            timestamp: timestamp
         }
     })
-    log('extractBlockDexLiquidity: ', liquidity)
+    log('dexBalances: ', liquidity)
+
+    // TODO : move to config
+    const loanBalances = await api.query.loans.totalPositions({ TOKEN: 'KSM' });
+    const loanPositions = {
+        timestamp: timestamp,
+        collateral: loanBalances.collateral.toString(),
+        debit: loanBalances.debit.toString(),
+    }
+    log('LOAN BALANCES: ', loanPositions)
     
-    let blockTVL = new BlockTVL(liquidity)
+    let blockTVL = new BlockTVL(liquidity, loanPositions)
     log('BLOCK TVL', blockTVL)
 
     // write block data to DB
