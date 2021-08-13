@@ -16,7 +16,8 @@
     "@open-web3/scanner": "^0.9.4-23",
     "@polkadot/api": "^5.4.1",
     "@polkadot/rpc-provider": "^5.4.1",
-    "chalk": "^4.1.2"
+    "chalk": "^4.1.2",
+    "mongodb": "^4.1.0"
   },
   "devDependencies": {
     "nodemon": "^2.0.12",

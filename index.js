@@ -1,45 +1,34 @@
 // const Scanner = require('@open-web3/scanner');
 const { calculateBlockTvl } = require('./services/calculateBlockTvl');
-const { ApiPromise } = require('@polkadot/api');
-const { WsProvider } = require('@polkadot/rpc-provider');
-const { options } = require("@acala-network/api");
-const config = require("./config.json");
 const chalk = require('chalk');
+const config = require("./config.json")
+const { sleep } = require("./util/index")
 const log = console.log;
+
+const {MongoClient} = require('mongodb');
+const client = new MongoClient(config.DB_URI, { useNewUrlParser: true, useUnifiedTopology: true });
+const tvl = client.db("kusama-statistics").collection("total-value-locked");
 
 (async function main() {
     log(chalk.blue.bold('Start Main Function'))
-    
-    // Get last block scan information 
-    // TODO: convert to DB.get
-    let sampleResponseFromDB = {
-        dex: {
-            pair: {
-                "KUSD/KSM": 10,
-                "KAR/KSM": 11,
-                timestamp: 3232
-            }
-        },
-        loans: {
-            ksmLocked: {
-                collateral: 100,
-                debit: 101,
-                timestamp: 100000
-            }
-        },
-        crowdloans: {
-            fundsRaised: 222
-        },
-        header: 31222
-    }
-    
-    // TODO: initiate scanning logic
-    // while(true) {
-        // dbData.lastHeader = header - 1; // testing
-        await calculateBlockTvl(sampleResponseFromDB);
-        // await sleep(6000);
-    // }
+    let lastScanRecord;
 
+    while(true) {
+        try {
+            // Connect to the MongoDB cluster
+            await client.connect();
+            // await tvl.deleteMany({}) // Reset DB for testing
+            lastScanRecord = await tvl.findOne({}, { sort:{ $natural:-1 } })
+            
+            await calculateBlockTvl(lastScanRecord);
+
+            log(chalk.blue.bold(`Sleeping for ${config.SLEEP_DURATION / 1000} seconds...`))
+
+            await sleep(config.SLEEP_DURATION);
+        } catch (e) {
+            console.error("Error getting last scan reccord", e);
+        }  
+    }
 })()
 
 
