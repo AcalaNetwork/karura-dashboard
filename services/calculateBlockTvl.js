@@ -7,7 +7,7 @@ let config = require("../config.json");
 const log = console.log;
 
 // Mongo DB connections
-const {MongoClient} = require('mongodb');
+const { MongoClient } = require('mongodb');
 const client = new MongoClient(config.DB_URI, { useNewUrlParser: true, useUnifiedTopology: true });
 const tvl = client.db("kusama-statistics").collection("total-value-locked");
 
@@ -27,7 +27,7 @@ const kusamaApi = new ApiPromise(
 
 /**
  * Implementation calulating TVL of a DEX pool at a specific block
- * @param {*} lastBlock the previous tvl data form the last successful run of the scan
+ * @param {obj} lastBlock the previous tvl data form the last successful run of the scan
  */
 const calculateBlockTvl = async (lastBlock) => {
     await karuraApi.isReady;
@@ -53,15 +53,8 @@ const calculateBlockTvl = async (lastBlock) => {
             extractBlockNumber(header, lastBlock);
         } else {
             for (let blockNumber = (previousHeader + 1); blockNumber <= header; blockNumber++) {
-                await client.connect();
-                const lastScanRecord = await tvl.findOne({}, { sort:{ $natural:-1 } })
-                if (blockNumber == previousHeader + 1) {
-                    log(chalk.blue.bold('IMPORT BLOCK (first scan or many): ') + `#${blockNumber}, previousHeader: #${lastBlock.header}`);
-                    await extractBlockNumber(blockNumber, lastBlock);
-                } else {
-                    log(chalk.blue.bold('IMPORT BLOCK (scanning...): ') + `#${blockNumber}, previousHeader: #${lastScanRecord.header}`);
-                    await extractBlockNumber(blockNumber, lastScanRecord);
-                };
+                log(chalk.blue.bold('IMPORT BLOCK: ') + `#${blockNumber}`);
+                await extractBlockNumber(blockNumber);
             }
         }
     } else {
@@ -69,23 +62,23 @@ const calculateBlockTvl = async (lastBlock) => {
     }
 };
 
-async function extractBlockNumber(blockNumber, lastBlock) {
+async function extractBlockNumber(blockNumber) {
     const blockHash = await karuraApi.rpc.chain.getBlockHash(blockNumber);
     const signedBlock = await karuraApi.rpc.chain.getBlock(blockHash);
-    await extractBlock(signedBlock.block, blockNumber, lastBlock);
+    await extractBlock(signedBlock.block, blockNumber);
 }
 
-async function extractBlock(block, blockNumber, lastBlock) {
+async function extractBlock(block, blockNumber) {
     log(chalk.blue.bold('API: ') + `Extracting Block: ${block.header.hash}`);
 
     const timestamp = await karuraApi.query.timestamp.now.at(block.header.hash);
     log(chalk.blue.bold('API: ') + `Timestamp: ${timestamp.toString()}`);
 
-    await extractBlockDexLiquidities(block, timestamp.toString(), blockNumber, lastBlock);
+    await extractBlockDexLiquidities(block, timestamp.toString(), blockNumber);
     // await extractBlockEvents(block, timestamp);
 }
 
-async function extractBlockDexLiquidities(block, timestamp, blockNumber, lastBlock) {
+async function extractBlockDexLiquidities(block, timestamp, blockNumber) {
     const tradingPairs = config.TOKEN_PAIRS.map((pair) => {
         const tokenA = karuraApi.registry.createType('CurrencyId', { Token: pair[0] });
         const tokenB = karuraApi.registry.createType('CurrencyId', { Token: pair[1] });
@@ -103,10 +96,10 @@ async function extractBlockDexLiquidities(block, timestamp, blockNumber, lastBlo
             });
         });
     });
-    await extractBlockValue(tradingPairs, timestamp, blockNumber, lastBlock);
+    await extractBlockValue(tradingPairs, timestamp, blockNumber);
 }
 
-async function extractBlockValue(tradingPairs, timestamp, blockNumber, lastBlock) {
+async function extractBlockValue(tradingPairs, timestamp, blockNumber) {
     const dexBalances = await Promise.all(tradingPairs);
     const liquidity = dexBalances.map((balance) => {
         return {
@@ -118,8 +111,7 @@ async function extractBlockValue(tradingPairs, timestamp, blockNumber, lastBlock
             },
             pair: balance.pair,
         }
-    })
-    // log('dexBalances: ', liquidity)
+    });
 
     // Total Loan Positions
     const loanBalances = await karuraApi.query.loans.totalPositions({ TOKEN: 'KSM' });
@@ -134,21 +126,21 @@ async function extractBlockValue(tradingPairs, timestamp, blockNumber, lastBlock
     const fundsRaised = crowdloan.toString().raised;
     
     // Final Block Data
-    let blockTVL = new BlockTVL(liquidity, loanPositions, fundsRaised, lastBlock.header, blockNumber.toString())
+    let blockTVL = new BlockTVL(liquidity, loanPositions, fundsRaised, blockNumber.toString())
 
     // write lastBlock informaiton to DB
     await recordBlockData(blockTVL);
 }
 
-async function recordBlockData (blockTVL) {
-    log(chalk.blue.bold('CONFIG: ') + `Saved: Last Block ${JSON.stringify(blockTVL)}`);
-    
+async function recordBlockData (blockTVL) {   
     await client.connect();
     await tvl.insertOne(blockTVL, (err, data) => {
         if (err) {
             throw new Error("Error occured while saving scan results")
         }
     });
+
+    log(chalk.blue.bold('SAVED BLOCK: ') + `${blockTVL.header}`);
     return
 }
 

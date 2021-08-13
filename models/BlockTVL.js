@@ -1,9 +1,32 @@
 module.exports = class BlockTvl {
-    constructor (dexLiquidity, loanBalances, fundsRaised, previousHeader, header) {
+    constructor (dexLiquidity, loanBalances, fundsRaised, header) {
 
         /**
          * Generates a TVL object 
-         * @ param {}
+         * @param {
+         *      dex: {
+         *          pair: {
+         *             "KUSD/KSM": 10,
+         *             "KAR/KSM": 11,
+         *             timestamp: 3232
+         *          }
+         *      }
+         * } dexLiquidity
+         * @param {
+         *      loans: {
+         *          ksmLocked: {
+         *              collateral: 100,
+         *              debit: 101,
+         *              timestamp: 100000
+         *          }
+         *      }
+         * }
+         * @param {
+         *      crowdloans: {
+         *          fundsRaised: 222
+         *      }
+         * } fundsRaised
+         * @param {number} header
          */
         this.dex = {}
         dexLiquidity.map((e) => {
@@ -25,11 +48,6 @@ module.exports = class BlockTvl {
          */
         this.crowdloans = {}
         this.crowdloans.fundsRaised = fundsRaised
-
-        /**
-         * Previous block header number
-         */
-        this.previousHeader = Number(previousHeader)
 
         /**
          * Current header number

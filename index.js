@@ -5,7 +5,7 @@ const config = require("./config.json")
 const { sleep } = require("./util/index")
 const log = console.log;
 
-const {MongoClient} = require('mongodb');
+const { MongoClient } = require('mongodb');
 const client = new MongoClient(config.DB_URI, { useNewUrlParser: true, useUnifiedTopology: true });
 const tvl = client.db("kusama-statistics").collection("total-value-locked");
 
@@ -23,7 +23,6 @@ const tvl = client.db("kusama-statistics").collection("total-value-locked");
             await calculateBlockTvl(lastScanRecord);
 
             log(chalk.blue.bold(`Sleeping for ${config.SLEEP_DURATION / 1000} seconds...`))
-
             await sleep(config.SLEEP_DURATION);
         } catch (e) {
             console.error("Error getting last scan reccord", e);
@@ -31,7 +30,7 @@ const tvl = client.db("kusama-statistics").collection("total-value-locked");
     }
 })()
 
-
+// TODO: Implement event driven scanning using Acala Scanner
 // Scanner package currently broken needs re-implemntation before continuing with block event driven logic
 
 // Subscribe to block changes and run TVL logic on new blocks
