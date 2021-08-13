@@ -15,9 +15,7 @@ const tvl = client.db("kusama-statistics").collection("total-value-locked");
 
     while(true) {
         try {
-            // Connect to the MongoDB cluster
             await client.connect();
-            // await tvl.deleteMany({}) // Reset DB for testing
             lastScanRecord = await tvl.findOne({}, { sort:{ $natural:-1 } })
             
             await calculateBlockTvl(lastScanRecord);
