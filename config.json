@@ -1,0 +1,8 @@
+{
+    "KARURA_PROVIDER" : "wss://karura.api.onfinality.io/public-ws",
+    "KUSAMA_PROVIDER" : "wss://kusama.elara.patract.io",
+    "KUSAMA_CROWDLOAN_ID" : 2000,
+    "TOKEN_PAIRS" : [ ["KAR", "KSM"], ["KUSD", "KSM"] ],
+    "DB_URI" : "mongodb+srv://test:test@kusamastatistics.llpr4.mongodb.net/myFirstDatabase?retryWrites=true&w=majority",
+    "SLEEP_DURATION" : 6000
+}
