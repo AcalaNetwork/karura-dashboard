@@ -1,7 +1,5 @@
-const { ApiPromise, WsProvider } = require("@polkadot/api");
 const { Token, TokenPair } = require('@acala-network/sdk-core');
 const BlockTVL = require('../models/BlockTVL')
-const { options } = require("@acala-network/api");
 const chalk = require('chalk');
 let config = require("../config.json");
 const log = console.log
@@ -11,26 +9,13 @@ const { MongoClient } = require('mongodb');
 const client = new MongoClient(config.DB_URI, { useNewUrlParser: true, useUnifiedTopology: true });
 const tvl = client.db("kusama-statistics").collection("total-value-locked");
 
-// Blockchain connections
-const karuraProvider = new WsProvider(config.KARURA_PROVIDER);
-const karuraApi = new ApiPromise(
-    options({
-        provider: karuraProvider,
-    })
-);
-const kusamaProvider = new WsProvider(config.KUSAMA_PROVIDER);
-const kusamaApi = new ApiPromise(
-    options({
-        provider: kusamaProvider,
-    })
-);
-
 /**
  * Implementation calulating TVL of a DEX pool at a specific block
  * @param {obj} lastBlock the previous tvl data form the last successful run of the scan
+ * @param {Promise} karuraApi an active connection with Karura websocket
+ * @param {Promise} kusamaApi an active connection with Karura websocket
  */
-const calculateBlockTvl = async (lastBlock) => {
-    await karuraApi.isReady;
+const calculateBlockTvl = async (lastBlock, karuraApi, kusamaApi) => {
     let header = await karuraApi.derive.chain.bestNumberFinalized();
 
     let previousHeader;
@@ -50,11 +35,11 @@ const calculateBlockTvl = async (lastBlock) => {
     if (header > previousHeader) {
         if (header == previousHeader + 1) {
             log(chalk.blue.bold('IMPORT BLOCK: ') + `#${header}`);
-            extractBlockNumber(header, lastBlock);
+            await extractBlockNumber(header, karuraApi, kusamaApi);
         } else {
             for (let blockNumber = (previousHeader + 1); blockNumber <= header; blockNumber++) {
                 log(chalk.blue.bold('IMPORT BLOCK: ') + `#${blockNumber}`);
-                await extractBlockNumber(blockNumber);
+                await extractBlockNumber(blockNumber, karuraApi, kusamaApi);
             }
         }
     } else {
@@ -62,23 +47,23 @@ const calculateBlockTvl = async (lastBlock) => {
     }
 };
 
-async function extractBlockNumber(blockNumber) {
+async function extractBlockNumber(blockNumber, karuraApi, kusamaApi) {
     const blockHash = await karuraApi.rpc.chain.getBlockHash(blockNumber);
     const signedBlock = await karuraApi.rpc.chain.getBlock(blockHash);
-    await extractBlock(signedBlock.block, blockNumber);
+    await extractBlock(signedBlock.block, blockNumber, karuraApi, kusamaApi);
 }
 
-async function extractBlock(block, blockNumber) {
+async function extractBlock(block, blockNumber, karuraApi, kusamaApi) {
     log(chalk.blue.bold('API: ') + `Extracting Block: ${block.header.hash}`);
 
     const timestamp = await karuraApi.query.timestamp.now.at(block.header.hash);
     log(chalk.blue.bold('API: ') + `Timestamp: ${timestamp.toString()}`);
 
-    await extractBlockDexLiquidities(block, timestamp.toString(), blockNumber);
+    await extractBlockDexLiquidities(block, timestamp.toString(), blockNumber, karuraApi, kusamaApi);
     // await extractBlockEvents(block, timestamp);
 }
 
-async function extractBlockDexLiquidities(block, timestamp, blockNumber) {
+async function extractBlockDexLiquidities(block, timestamp, blockNumber, karuraApi, kusamaApi) {
     const tradingPairs = config.TOKEN_PAIRS.map((pair) => {
         const tokenA = karuraApi.registry.createType('CurrencyId', { Token: pair[0] });
         const tokenB = karuraApi.registry.createType('CurrencyId', { Token: pair[1] });
@@ -97,10 +82,10 @@ async function extractBlockDexLiquidities(block, timestamp, blockNumber) {
 
     const dexBalances = await Promise.all(tradingPairs);
 
-    await extractBlockValue(dexBalances, timestamp, blockNumber);
+    await extractBlockValue(dexBalances, timestamp, blockNumber, karuraApi, kusamaApi);
 }
 
-async function extractBlockValue(dexBalances, timestamp, blockNumber) {
+async function extractBlockValue(dexBalances, timestamp, blockNumber, karuraApi, kusamaApi) {
     const liquidity = dexBalances.map((balance) => {
         return {
             data: {
@@ -123,7 +108,8 @@ async function extractBlockValue(dexBalances, timestamp, blockNumber) {
 
     // Total Crowd Loan Funds
     const crowdloan = await kusamaApi.query.crowdloan.funds(config.KUSAMA_CROWDLOAN_ID);
-    const fundsRaised = crowdloan.toString().raised;
+    const fundsLoaned = crowdloan.toString()
+    const fundsRaised = JSON.parse(fundsLoaned).raised;
     
     // Final Block Data
     let blockTVL = new BlockTVL(liquidity, loanPositions, fundsRaised, blockNumber.toString())
