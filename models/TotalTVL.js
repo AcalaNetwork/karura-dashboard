@@ -22,10 +22,10 @@ module.exports = class TotalTvl {
         this.dexTvl = {}
         this.dexTvl.kusdKsmPair = {}
         this.dexTvl.karKsmPair = {}
-        this.dexTvl.kusdKsmPair.kusd = this.getLiquidityValue(liquidityKUSD[0])
-        this.dexTvl.kusdKsmPair.ksm = this.getLiquidityValue(liquidityKUSD[1])
-        this.dexTvl.karKsmPair.kar = this.getLiquidityValue(liquidityKAR[0])
-        this.dexTvl.karKsmPair.ksm = this.getLiquidityValue(liquidityKAR[1])
+        this.dexTvl.kusdKsmPair.kusd = liquidityKUSD[0][0]
+        this.dexTvl.kusdKsmPair.ksm = liquidityKUSD[0][1]
+        this.dexTvl.karKsmPair.kar = liquidityKAR[1][0]
+        this.dexTvl.karKsmPair.ksm = liquidityKAR[1][1]
         this.dexTvl.totals = this.calculateDexTotals()
 
         /**
@@ -40,7 +40,7 @@ module.exports = class TotalTvl {
     }
 
     /**
-     * Takes a currency and returns a unit
+     * Takes .toHuman() representation of a currency and returns a unit
      * i.e. MKAR = 1 million KKAR = 1000
         * @param currency
     */
@@ -57,7 +57,7 @@ module.exports = class TotalTvl {
     }
 
     /**
-     * Takes a response from dex.liquiditypool query and calculates the raw unit of currency
+     * Takes a .toHuman response from dex.liquiditypool query and calculates the raw unit of currency
      * i.e. 500 MKAR = 500 KAR * 1,000,000 = 500,000,000 KAR
         * @param '500 MKAR'
     */

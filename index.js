@@ -1,16 +1,16 @@
 // const Scanner = require('@open-web3/scanner');
 const { calculateBlockTvl } = require('./services/calculateBlockTvl');
 const chalk = require('chalk');
-const config = require("./config.json")
-const { sleep } = require("./util/index")
-const log = console.log;
+const config = require("./config.json");
+const { sleep } = require("./util/index");
+const log = console.log
 
 const { MongoClient } = require('mongodb');
 const client = new MongoClient(config.DB_URI, { useNewUrlParser: true, useUnifiedTopology: true });
 const tvl = client.db("kusama-statistics").collection("total-value-locked");
 
 (async function main() {
-    log(chalk.blue.bold('Start Main Function'))
+    log(chalk.blue.bold('Start Main Function'));
     let lastScanRecord;
 
     while(true) {

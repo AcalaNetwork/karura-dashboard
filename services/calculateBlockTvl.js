@@ -4,7 +4,7 @@ const BlockTVL = require('../models/BlockTVL')
 const { options } = require("@acala-network/api");
 const chalk = require('chalk');
 let config = require("../config.json");
-const log = console.log;
+const log = console.log
 
 // Mongo DB connections
 const { MongoClient } = require('mongodb');
@@ -83,24 +83,24 @@ async function extractBlockDexLiquidities(block, timestamp, blockNumber) {
         const tokenA = karuraApi.registry.createType('CurrencyId', { Token: pair[0] });
         const tokenB = karuraApi.registry.createType('CurrencyId', { Token: pair[1] });
         const tradingPair = new TokenPair(Token.fromCurrencyId(tokenA), Token.fromCurrencyId(tokenB)).toTradingPair(karuraApi) 
-        return new Promise((resolve, reject) => {
-            karuraApi.query.dex.liquidityPool.at(block.header.hash, tradingPair)
-            .then(res => {
-                resolve({
+        return karuraApi.query.dex.liquidityPool.at(block.header.hash, tradingPair)
+            .then((res) => {
+                return {
                     pair: pair,
                     data: res
-                })
+                }
             })
-            .catch(e => {
-                reject(e)
+            .catch((e) => {
+                throw new Error('Error getting dex.liquidityPool')
             });
-        });
     });
-    await extractBlockValue(tradingPairs, timestamp, blockNumber);
+
+    const dexBalances = await Promise.all(tradingPairs);
+
+    await extractBlockValue(dexBalances, timestamp, blockNumber);
 }
 
-async function extractBlockValue(tradingPairs, timestamp, blockNumber) {
-    const dexBalances = await Promise.all(tradingPairs);
+async function extractBlockValue(dexBalances, timestamp, blockNumber) {
     const liquidity = dexBalances.map((balance) => {
         return {
             data: {
@@ -141,7 +141,6 @@ async function recordBlockData (blockTVL) {
     });
 
     log(chalk.blue.bold('SAVED BLOCK: ') + `${blockTVL.header}`);
-    return
 }
 
 module.exports = {
